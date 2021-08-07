@@ -1,57 +1,73 @@
 #include <iostream>
+#include"VideoEncoder.h"
 #include"VideoDecoder.h"
 #include"FrameRecviver.h"
 #include<stdlib.h>
 
-class RGBFR:public RGBAFrameRecviver
+EncodeOutput *CreateEncodeOutput(const char *filename);
+
+class RGBA2Two:public RGBAFrameRecviver
 {
-    uint count=0;
-
-    char filename[32];
-
     uint8 *two_image=nullptr;
+
+    VideoEncoder *encoder;
 
 public:
 
-    ~RGBFR()
+    RGBA2Two(VideoEncoder *ve)
+    {
+        encoder=ve;
+    }
+
+    ~RGBA2Two()
     {
         delete[] two_image;
     }
 
-    void RGBA2Two(uint8 *tar,const uint8 *src,const uint width,const uint height)
+    void Convert(uint8 *tar,const uint8 *src,const uint width,const uint height)
     {
         uint8 *cp=tar;
-        uint8 *ap=tar+width*3;
+        uint8 *ap=tar+width*4;
         const uint8 *sp=src;
 
         for(uint row=0;row<height;row++)
         {
             for(uint col=0;col<width;col++)
             {
-                cp[0]=sp[2];
+                cp[0]=sp[0];
                 cp[1]=sp[1];
-                cp[2]=sp[0];    cp+=3;sp+=3;
+                cp[2]=sp[2];
+                cp[3]=255;
+
+                cp+=4;sp+=3;
+
                 *ap=*sp;    ++ap;
                 *ap=*sp;    ++ap;
-                *ap=*sp;    ++ap;++sp;
+                *ap=*sp;    ++ap;
+                *ap=255;    ++sp;
             }
             
-            cp+=width*3;
-            ap+=width*3;
+            cp+=width*4;
+            ap+=width*4;
         }
     }
 
     void OnFrame(const uint8 *data) override
     {
-        sprintf_s(filename,32,"%d.tga",count);
-        ++count;
-
         if(!two_image)
-            two_image=new uint8[GetWidth()*GetHeight()*6];
+        {
+            two_image=new uint8[GetWidth()*GetHeight()*8];
 
-        RGBA2Two(two_image,data,GetWidth(),GetHeight());
+            encoder->Set(GetWidth(),GetHeight(),frame_rate);
 
-        SaveToTGA(filename,(void *)two_image,GetWidth()*2,GetHeight(),24,true);
+            encoder->Init();
+        }
+
+        Convert(two_image,data,GetWidth(),GetHeight());
+
+        encoder->Put(two_image);
+
+        //SaveToTGA(filename,(void *)two_image,GetWidth()*2,GetHeight(),24,true);
     }
 };
 
@@ -59,16 +75,22 @@ int main(int argc,char **argv)
 {
     std::cout << "MOV 2 two\n";
 
-    if(argc<2)
+    if(argc<4)
     {
-        std::cout<<"Example: mov2two 1.mov\n\n";
+        std::cout<<"Format: mov2two [input] [output] [bit rate]\n";
+        std::cout<<"Example: mov2two input.mov output.mp4 1048576\n\n";
         return 0;
     }
 
+    long bit_rate=atol(argv[3]);
+
     std::cout<<"input: "<<argv[1]<<std::endl;
-
-    FrameRecviver *fr=new RGBFR();
-
+    std::cout<<"output: "<<argv[2]<<std::endl;
+    std::cout<<"bit_rate: "<<bit_rate<<std::endl;
+    
+    EncodeOutput *eo=CreateEncodeOutput(argv[2]);
+    VideoEncoder *ve=CreateVideoEncoder(eo,bit_rate);
+    FrameRecviver *fr=new RGBA2Two(ve);
     VideoDecoder *vd=CreateVideoDecoder(argv[1],fr);
 
     vd->Start();
@@ -84,5 +106,7 @@ int main(int argc,char **argv)
 
     delete vd;
     delete fr;
+    delete ve;
+    delete eo;
     return 0;
 }

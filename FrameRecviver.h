@@ -14,10 +14,13 @@ protected:
     uint width=0;
     uint height=0;
 
+    AVRational frame_rate;
+
 public:
 
     virtual ~FrameRecviver()=default;
 
+    virtual void SetFrameRate(const AVRational &r){frame_rate=r;}
     virtual void OnFrame(const AVFrame *frame)=0;
 
 public:

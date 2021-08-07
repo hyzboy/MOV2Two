@@ -72,27 +72,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <ExecutablePath>$(SolutionDir)ffmpeg\bin;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>$(SolutionDir)ffmpeg\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)ffmpeg\lib;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)ffmpeg\bin;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(ProjectDir)ffmpeg\include;$(ProjectDir)libyuv\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ffmpeg\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <ExecutablePath>$(SolutionDir)ffmpeg\bin;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>$(SolutionDir)ffmpeg\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)ffmpeg\lib;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)ffmpeg\bin;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(ProjectDir)ffmpeg\include;$(ProjectDir)libyuv\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ffmpeg\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <ExecutablePath>$(SolutionDir)ffmpeg\bin;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>$(SolutionDir)ffmpeg\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)ffmpeg\lib;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)ffmpeg\bin;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(ProjectDir)ffmpeg\include;$(ProjectDir)libyuv\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ffmpeg\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <ExecutablePath>$(SolutionDir)ffmpeg\bin;$(ExecutablePath)</ExecutablePath>
-    <IncludePath>$(SolutionDir)ffmpeg\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)ffmpeg\lib;$(LibraryPath)</LibraryPath>
+    <ExecutablePath>$(ProjectDir)ffmpeg\bin;$(ExecutablePath)</ExecutablePath>
+    <IncludePath>$(ProjectDir)ffmpeg\include;$(ProjectDir)libyuv\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)ffmpeg\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -156,9 +156,27 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Bitmap.cpp" />
+    <ClCompile Include="libyuv\source\convert.cc" />
+    <ClCompile Include="libyuv\source\convert_argb.cc" />
+    <ClCompile Include="libyuv\source\convert_from.cc" />
+    <ClCompile Include="libyuv\source\convert_from_argb.cc" />
+    <ClCompile Include="libyuv\source\cpu_id.cc" />
+    <ClCompile Include="libyuv\source\planar_functions.cc" />
+    <ClCompile Include="libyuv\source\row_any.cc" />
+    <ClCompile Include="libyuv\source\row_common.cc" />
+    <ClCompile Include="libyuv\source\row_win.cc" />
+    <ClCompile Include="libyuv\source\scale.cc" />
+    <ClCompile Include="libyuv\source\scale_any.cc" />
+    <ClCompile Include="libyuv\source\scale_argb.cc" />
+    <ClCompile Include="libyuv\source\scale_common.cc" />
+    <ClCompile Include="libyuv\source\scale_uv.cc" />
+    <ClCompile Include="libyuv\source\scale_win.cc" />
+    <ClCompile Include="libyuv\source\video_common.cc" />
     <ClCompile Include="mov2two.cpp" />
     <ClCompile Include="RGBAFrameRecviver.cpp" />
     <ClCompile Include="VideoDecoder.cpp" />
+    <ClCompile Include="VideoEncoder.cpp" />
+    <ClCompile Include="VideoFileOutput.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bitmap.h" />
@@ -166,6 +184,7 @@
     <ClInclude Include="FrameRecviver.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="VideoDecoder.h" />
+    <ClInclude Include="VideoEncoder.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

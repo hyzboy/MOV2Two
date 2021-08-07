@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\libyuv">
+      <UniqueIdentifier>{ae9f7a8a-5e32-41e6-8209-da727327a280}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="mov2two.cpp">
@@ -26,6 +29,60 @@
     </ClCompile>
     <ClCompile Include="RGBAFrameRecviver.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoEncoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoFileOutput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert_from_argb.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert_from.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_common.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_win.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\row_any.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\cpu_id.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\planar_functions.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_win.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_any.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_argb.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_common.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\scale_uv.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\convert_argb.cc">
+      <Filter>Source Files\libyuv</Filter>
+    </ClCompile>
+    <ClCompile Include="libyuv\source\video_common.cc">
+      <Filter>Source Files\libyuv</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -42,6 +99,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="FrameRecviver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoEncoder.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

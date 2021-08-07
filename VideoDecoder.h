@@ -25,6 +25,8 @@ public:
     const double    GetFPS      ()const{return fps;}
     const double    GetFrameTime()const{return frame_time;}
 
+    virtual const AVRational &GetFrameRate()=0;
+
 public:
 
     virtual ~VideoDecoder()=default;

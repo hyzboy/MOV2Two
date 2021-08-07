@@ -10,13 +10,13 @@
 
 namespace
 {
-    struct CodecName_by_ID
+    struct EncodecName_by_ID
     {
         AVCodecID id;
         char name[32];
     };
 
-    constexpr CodecName_by_ID codec_name_by_id[]=
+    constexpr EncodecName_by_ID encodec_name_by_id[]=
     {
         {AV_CODEC_ID_MJPEG      ,"mjpeg_cuvid"},
         {AV_CODEC_ID_MPEG1VIDEO ,"mpeg1_cuvid"},
@@ -44,11 +44,11 @@ namespace
         {AV_CODEC_ID_NONE       ,""}
     };
 
-    AVCodec *GetAVCodecDecoder(AVCodecID id)
+    AVCodec *GetAVDecodec(AVCodecID id)
     {
         AVCodec *codec=nullptr;
 
-        for(auto &c:codec_name_by_id)
+        for(auto &c:encodec_name_by_id)
         {
 
             if(c.id==id)
@@ -144,7 +144,7 @@ public:
         if(!video_cp)
             return(false);
 
-        video_codec=GetAVCodecDecoder(video_cp->codec_id);
+        video_codec=GetAVDecodec(video_cp->codec_id);
 
         if(!video_codec)
         {
@@ -170,7 +170,14 @@ public:
         fps=double(video_stream->avg_frame_rate.num)/double(video_stream->avg_frame_rate.den);
         frame_time=double(video_stream->avg_frame_rate.den)/double(video_stream->avg_frame_rate.num);
 
+        frame_recviver->SetFrameRate(video_stream->r_frame_rate);
+
         return(true);
+    }
+    
+    const AVRational &GetFrameRate() override
+    {
+        return video_stream->r_frame_rate;
     }
 
     void Start()
