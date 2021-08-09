@@ -4,8 +4,6 @@
 #include"FrameRecviver.h"
 #include<stdlib.h>
 
-EncodeOutput *CreateEncodeOutput(const char *filename);
-
 class RGBA2Two:public RGBAFrameRecviver
 {
     uint8 *two_image=nullptr;
@@ -21,6 +19,8 @@ public:
 
     ~RGBA2Two()
     {
+        encoder->Finish();
+
         delete[] two_image;
     }
 
@@ -44,7 +44,7 @@ public:
                 *ap=*sp;    ++ap;
                 *ap=*sp;    ++ap;
                 *ap=*sp;    ++ap;
-                *ap=255;    ++sp;
+                *ap=255;    ++ap;++sp;
             }
             
             cp+=width*4;
@@ -58,7 +58,7 @@ public:
         {
             two_image=new uint8[GetWidth()*GetHeight()*8];
 
-            encoder->Set(GetWidth(),GetHeight(),frame_rate);
+            encoder->Set(GetWidth()*2,GetHeight(),frame_rate);
 
             encoder->Init();
         }
@@ -88,8 +88,7 @@ int main(int argc,char **argv)
     std::cout<<"output: "<<argv[2]<<std::endl;
     std::cout<<"bit_rate: "<<bit_rate<<std::endl;
     
-    EncodeOutput *eo=CreateEncodeOutput(argv[2]);
-    VideoEncoder *ve=CreateVideoEncoder(eo,bit_rate);
+    VideoEncoder *ve=CreateVideoEncoder(argv[2],bit_rate);
     FrameRecviver *fr=new RGBA2Two(ve);
     VideoDecoder *vd=CreateVideoDecoder(argv[1],fr);
 
@@ -107,6 +106,5 @@ int main(int argc,char **argv)
     delete vd;
     delete fr;
     delete ve;
-    delete eo;
     return 0;
 }

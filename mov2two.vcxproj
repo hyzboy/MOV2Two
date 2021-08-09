@@ -176,7 +176,6 @@
     <ClCompile Include="RGBAFrameRecviver.cpp" />
     <ClCompile Include="VideoDecoder.cpp" />
     <ClCompile Include="VideoEncoder.cpp" />
-    <ClCompile Include="VideoFileOutput.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Bitmap.h" />

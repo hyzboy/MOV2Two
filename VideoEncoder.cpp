@@ -66,72 +66,115 @@ class FFMPEGVideoEncoder:public VideoEncoder
     AVCodec *codec;
     AVCodecContext *codec_ctx;
     AVFrame *frame;
-    AVPacket *packet;
+
+    AVStream *video_stream=nullptr;
 
     uint pts;
 
+    AVFormatContext *fmt_ctx;
+    AVOutputFormat *out_fmt;
+
+    AVPacket *packet;
+
 public:
 
-    FFMPEGVideoEncoder(AVCodec *eco,EncodeOutput *eo,const uint br):VideoEncoder(eo,br)
+    FFMPEGVideoEncoder(const char *fn,AVCodec *eco,const uint br):VideoEncoder(fn,br)
     {
         codec=eco;
 
         frame=av_frame_alloc();
         codec_ctx=avcodec_alloc_context3(codec);
-        packet=av_packet_alloc();
+        
+        out_fmt=av_guess_format(nullptr,filename,nullptr);
+
+        if(avformat_alloc_output_context2(&fmt_ctx,out_fmt,nullptr,filename)<0)
+        {
+            std::cerr<<"alloc output context2 failed"<<std::endl;
+            return;
+        }
 
         pts=0;
+
+        packet=av_packet_alloc();
     }
 
     ~FFMPEGVideoEncoder()
     {
-        if(packet)
-            av_packet_free(&packet);
-
         if(frame)
             av_frame_free(&frame);
 
         if(codec_ctx)
             avcodec_free_context(&codec_ctx);
+
+        avformat_free_context(fmt_ctx);
     }
 
     void Set(const uint w,const uint h,const AVRational &fr) override
     {
         VideoEncoder::Set(w,h,fr);
 
-        AVRational tb;
-
-        tb.num=fr.den;
-        tb.den=fr.num;
-
         codec_ctx->bit_rate     =bit_rate;
         codec_ctx->width        =w;
         codec_ctx->height       =h;
-        codec_ctx->time_base    =tb;
         codec_ctx->framerate    =fr;
-        codec_ctx->gop_size     =10;
-        codec_ctx->max_b_frames =1;
+        codec_ctx->time_base    =av_inv_q(fr);
+        codec_ctx->gop_size     =12;
+        codec_ctx->max_b_frames =2;
         codec_ctx->pix_fmt      =AV_PIX_FMT_NV12;
+        codec_ctx->codec_type   =AVMEDIA_TYPE_VIDEO;
+
+        video_stream=avformat_new_stream(fmt_ctx,codec);
+        video_stream->codecpar->codec_id    =fmt_ctx->video_codec_id;
+        video_stream->codecpar->codec_type  =AVMEDIA_TYPE_VIDEO;
+        video_stream->codecpar->width       =w;
+        video_stream->codecpar->height      =h;
+        video_stream->codecpar->format      =codec_ctx->pix_fmt;
+        video_stream->codecpar->bit_rate    =bit_rate;
+        video_stream->time_base             =codec_ctx->time_base;
     }
 
     bool Init() override
     {
+        avcodec_parameters_to_context(codec_ctx,video_stream->codecpar);
+        
+        av_opt_set(codec_ctx->priv_data,"preset","slow",0);
+
+        if(fmt_ctx->oformat->flags&AVFMT_GLOBALHEADER)
+            codec_ctx->flags|=AV_CODEC_FLAG_GLOBAL_HEADER;            
+
         if(avcodec_open2(codec_ctx,codec,nullptr)<0)
         {
             std::cerr<<"avcodec open failed!"<<std::endl;
             return(false);
         }
 
-        av_opt_set(codec_ctx->priv_data,"preset","slow",0);
+        avcodec_parameters_from_context(video_stream->codecpar,codec_ctx);
 
-        frame->format=codec_ctx->pix_fmt;
-        frame->width=codec_ctx->width;
-        frame->height=codec_ctx->height;
+        if(avio_open2(&fmt_ctx->pb,filename,AVIO_FLAG_WRITE,nullptr,nullptr)<0)
+        {
+            std::cerr<<"avio open failed!"<<std::endl;
+            return(false);
+        }
+
+        if(avformat_write_header(fmt_ctx,nullptr)<0)
+        {
+            std::cerr<<"write header failed"<<std::endl;
+            return(false);
+        }
+
+        av_dump_format(fmt_ctx,0,filename,1);
+
+        frame->format   =codec_ctx->pix_fmt;
+        frame->width    =codec_ctx->width;
+        frame->height   =codec_ctx->height;
     
         int ret = av_frame_get_buffer(frame, 0);
 
         if(ret<0)
+        {
+            std::cerr<<"av frame get buffer failed!"<<std::endl;
             return(false);
+        }
 
         return(true);
     }
@@ -139,25 +182,45 @@ public:
     bool encode()
     {
         int ret=avcodec_send_frame(codec_ctx,frame);
+
         if(ret<0)
+        {
+            std::cerr<<"failed to send frame: "<<ret<<std::endl;
             return(false);
+        }
 
         while(ret>=0)
         {
             ret=avcodec_receive_packet(codec_ctx,packet);
 
             if(ret==AVERROR(EAGAIN)||ret==AVERROR_EOF)
+            {
                 return(true);
+            }
             else
             if(ret<0)
+            {
                 return(false);
+            }
 
-            std::cout<<"write "<<packet->size<<" bytes."<<std::endl;
+            if(ret==0)
+            {
+                packet->flags|=AV_PKT_FLAG_KEY;
 
-            output->Write(packet->data,packet->size);
-            av_packet_unref(packet);
+                if(packet->pts!=AV_NOPTS_VALUE)
+                    packet->pts=av_rescale_q(packet->pts,codec_ctx->time_base,video_stream->time_base);
+                if(packet->dts!=AV_NOPTS_VALUE)
+                    packet->dts=av_rescale_q(packet->dts,codec_ctx->time_base,video_stream->time_base);
+
+                std::cout<<"write packet "<<packet->pts<<" ("<<packet->size<<" bytes)"<<std::endl;
+                        
+                if(av_interleaved_write_frame(fmt_ctx,packet)<0)
+                    return(false);
+
+                av_packet_unref(packet);
+            }
         }
-
+        
         return(true);
     }
 
@@ -168,7 +231,7 @@ public:
         if(ret<0)
             return(false);
 
-        libyuv::ARGBToNV12( data,codec_ctx->width*4,
+        libyuv::ABGRToNV12( data,codec_ctx->width*4,
                             frame->data[0],frame->linesize[0],
                             frame->data[1],frame->linesize[1],
                             codec_ctx->width,codec_ctx->height);
@@ -176,18 +239,21 @@ public:
         frame->pts=pts;
         ++pts;
 
-        std::cout<<"convert "<<pts<<" frame."<<std::endl;
-
         return encode();
     }
 
     bool Finish() override
     {
-        return encode();
+        if(!encode())
+            return(false);
+
+        av_write_trailer(fmt_ctx);
+        avio_close(fmt_ctx->pb);
+        return(true);
     }
 };//class FFMPEGVideoEncoder:public VideoEncoder
 
-VideoEncoder *CreateVideoEncoder(EncodeOutput *eo,const uint bit_rate)
+VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate)
 {
     constexpr AVCodecID codec_list[]
     {
@@ -210,5 +276,5 @@ VideoEncoder *CreateVideoEncoder(EncodeOutput *eo,const uint bit_rate)
         return nullptr;
     }
 
-    return(new FFMPEGVideoEncoder(codec,eo,bit_rate));
+    return(new FFMPEGVideoEncoder(filename,codec,bit_rate));
 }

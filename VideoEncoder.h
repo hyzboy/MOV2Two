@@ -23,16 +23,16 @@ protected:
     AVRational frame_rate;
     uint bit_rate;
 
-    EncodeOutput *output;
+    char filename[_MAX_PATH];
 
 public:
 
-    VideoEncoder(EncodeOutput *eo,const uint br)
+    VideoEncoder(const char *fn,const uint br)
     {
+        strcpy_s(filename,_MAX_PATH,fn);
+
         width=height=0;
         bit_rate=br;
-
-        output=eo;
     }
 
     virtual ~VideoEncoder()=default;
@@ -51,4 +51,4 @@ public:
     virtual bool Finish()=0;
 };//class VideoEncoder
 
-VideoEncoder *CreateVideoEncoder(EncodeOutput *eo,const uint bit_rate);
+VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate);

@@ -33,9 +33,6 @@
     <ClCompile Include="VideoEncoder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VideoFileOutput.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="libyuv\source\convert_from_argb.cc">
       <Filter>Source Files\libyuv</Filter>
     </ClCompile>
