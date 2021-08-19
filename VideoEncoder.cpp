@@ -259,7 +259,8 @@ VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate)
     {
         AV_CODEC_ID_H264,
         AV_CODEC_ID_HEVC,
-        AV_CODEC_ID_VP9
+        AV_CODEC_ID_VP9,
+        AV_CODEC_ID_AV1
     };
 
     AVCodec *codec=nullptr;
@@ -272,7 +273,7 @@ VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate)
 
     if(!codec)
     {
-        std::cerr<<"We didn't find a encoder[H264,HEVC,VP9]"<<std::endl;
+        std::cerr<<"We didn't find a encoder[H264,HEVC,VP9,AV1]"<<std::endl;
         return nullptr;
     }
 
