@@ -1,6 +1,7 @@
 #pragma once
 
 #include"DataType.h"
+#include"FrameConvert.h"
 
 extern "C"
 {
@@ -33,7 +34,11 @@ class RGBAFrameRecviver:public FrameRecviver
 {
 private:
 
-    uint8 *rgba=nullptr;
+    AVPixelFormat src_format=AV_PIX_FMT_NONE;
+
+    FrameConvert *convert=nullptr;
+    
+private:
 
     void OnFrame(const AVFrame *frame);
 
@@ -41,7 +46,8 @@ public:
 
     virtual ~RGBAFrameRecviver()
     {
-        delete[] rgba;
+        if(convert)
+            delete convert;
     }
 
     virtual void OnFrame(const uint8 *)=0;

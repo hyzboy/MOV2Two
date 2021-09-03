@@ -1,21 +1,35 @@
 #include"FrameRecviver.h"
 #include<iostream>
 
+extern "C"
+{
+    #include<libavutil/pixdesc.h>
+}
+
 void RGBAFrameRecviver::OnFrame(const AVFrame *frame)
 {
-    if(!rgba)
+    if(src_format==AV_PIX_FMT_NONE)
     {
         width=frame->width;
         height=frame->height;
 
-        std::cout<<"size: "<<width<<"x"<<height<<std::endl
-                 <<"format: "<<frame->format<<std::endl;
+        src_format=AVPixelFormat(frame->format);
 
-        rgba=new uint8[width*height*4];
+        std::cout<<"size: "<<width<<"x"<<height<<std::endl
+                 <<"format: "<<av_get_pix_fmt_name(src_format)<<std::endl;
+
+        if(src_format!=AV_PIX_FMT_RGBA)
+            convert=InitFrameConvert(AV_PIX_FMT_RGBA,src_format,width,height);
     }
 
-    if(frame->format==AV_PIX_FMT_RGBA)
+    if(src_format==AV_PIX_FMT_RGBA)
     {
         OnFrame((uint8 *)(frame->data[0]));
+    }
+    else
+    {
+        convert->Convert(frame->data,frame->linesize);
+
+        OnFrame(convert->GetData(0));
     }
 }

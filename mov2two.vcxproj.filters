@@ -81,6 +81,9 @@
     <ClCompile Include="libyuv\source\video_common.cc">
       <Filter>Source Files\libyuv</Filter>
     </ClCompile>
+    <ClCompile Include="FrameConvert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VideoDecoder.h">
@@ -99,6 +102,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="VideoEncoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameConvert.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
