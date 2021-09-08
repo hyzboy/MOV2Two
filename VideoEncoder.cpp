@@ -212,7 +212,7 @@ public:
                 if(packet->dts!=AV_NOPTS_VALUE)
                     packet->dts=av_rescale_q(packet->dts,codec_ctx->time_base,video_stream->time_base);
 
-                std::cout<<"write packet "<<packet->pts<<" ("<<packet->size<<" bytes)"<<std::endl;
+                std::cout<<'.';
                         
                 if(av_interleaved_write_frame(fmt_ctx,packet)<0)
                     return(false);
