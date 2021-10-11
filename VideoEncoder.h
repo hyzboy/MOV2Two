@@ -53,4 +53,4 @@ public:
     virtual bool Finish()=0;
 };//class VideoEncoder
 
-VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate);
+VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate,const bool);

@@ -44,24 +44,26 @@ namespace
         {AV_CODEC_ID_NONE       ,""}
     };
 
-    AVCodec *GetAVDecodec(AVCodecID id)
+    AVCodec *GetAVDecodec(AVCodecID id,bool hardware)
     {
-        AVCodec *codec=nullptr;
-
-        for(auto &c:encodec_name_by_id)
+        if(hardware)
         {
+            AVCodec *codec=nullptr;
 
-            if(c.id==id)
+            for(auto &c:encodec_name_by_id)
             {
-                codec=avcodec_find_decoder_by_name(c.name);
-
-                if(codec)
+                if(c.id==id)
                 {
-                    std::cout<<"use decoder: "<<c.name<<std::endl;
-                    return codec;
+                    codec=avcodec_find_decoder_by_name(c.name);
+
+                    if(codec)
+                    {
+                        std::cout<<"use decoder: "<<c.name<<std::endl;
+                        return codec;
+                    }
                 }
             }
-        }        
+        }
 
         return avcodec_find_decoder(id);
     }
@@ -114,7 +116,7 @@ public:
             avformat_close_input(&ctx);
     }
 
-    bool Init(const char *filename)
+    bool Init(const char *filename,const bool use_hardware)
     {
         ctx=avformat_alloc_context();
 
@@ -144,7 +146,7 @@ public:
         if(!video_cp)
             return(false);
 
-        video_codec=GetAVDecodec(video_cp->codec_id);
+        video_codec=GetAVDecodec(video_cp->codec_id,use_hardware);
 
         if(!video_codec)
         {
@@ -196,27 +198,27 @@ public:
         {
             if(packet.stream_index==video_stream_index)
             {
-                if(avcodec_send_packet(video_ctx,&packet)>=0)
+                if(avcodec_send_packet(video_ctx,&packet)<0)
+                    return(false);
+                
+                ret=avcodec_receive_frame(video_ctx,frame);
+
+                if(ret==AVERROR(EAGAIN)||ret==AVERROR_EOF)
                 {
-                    ret=avcodec_receive_frame(video_ctx,frame);
-
-                    if(ret==AVERROR(EAGAIN)||ret==AVERROR_EOF)
-                    {
-                        av_packet_unref(&packet);
-                        continue;
-                    }
-
-                    if(ret<0)
-                    {
-                        av_packet_unref(&packet);
-                        return(false);
-                    }
-
-                    frame_recviver->OnFrame(frame);
-
                     av_packet_unref(&packet);
-                    return(true);
+                    continue;
                 }
+
+                if(ret<0)
+                {
+                    av_packet_unref(&packet);
+                    return(false);
+                }
+
+                frame_recviver->OnFrame(frame);
+
+                av_packet_unref(&packet);
+                return(true);
             }
 
             av_packet_unref(&packet);
@@ -231,11 +233,11 @@ public:
     }
 };//class FFmpegDecoder:public Decoder
 
-VideoDecoder *CreateVideoDecoder(const char *filename,FrameRecviver *fr)
+VideoDecoder *CreateVideoDecoder(const char *filename,FrameRecviver *fr,const bool use_hardware)
 {
     FFmpegVideoDecoder *dec=new FFmpegVideoDecoder(fr);
 
-    if(dec->Init(filename)==false)
+    if(dec->Init(filename,use_hardware)==false)
     {
         delete dec;
         return(nullptr);

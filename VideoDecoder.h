@@ -37,4 +37,4 @@ public:
     void Abort();                                                               ///<强退
 };//class VideoDecoder
 
-VideoDecoder *CreateVideoDecoder(const char *,FrameRecviver *);
+VideoDecoder *CreateVideoDecoder(const char *,FrameRecviver *,const bool);

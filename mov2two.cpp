@@ -121,6 +121,28 @@ public:
     }
 };
 
+uint32_t ConvertMovie(const char *src,const char *two,const char *rgb,const uint32_t max_height,const uint32_t bit_rate,const bool use_hardware)
+{    
+    VideoEncoder *ve_two=CreateVideoEncoder(two,bit_rate,use_hardware);
+    VideoEncoder *ve_rgb=CreateVideoEncoder(rgb,bit_rate,use_hardware);
+    FrameRecviver *fr=new RGBA2Two(ve_two,ve_rgb,max_height);
+    VideoDecoder *vd=CreateVideoDecoder(src,fr,use_hardware);
+
+    vd->Start();
+
+    uint32_t frame_count=0;
+
+    while(vd->NextFrame())
+        ++frame_count;
+
+    delete vd;
+    delete fr;
+    delete ve_two;
+    delete ve_rgb;
+
+    return frame_count;
+}
+
 int main(int argc,char **argv)
 {
     std::cout << "MOV 2 two\n";
@@ -146,26 +168,27 @@ int main(int argc,char **argv)
         max_height=atol(argv[5]);
 
     std::cout<<"max height: "<<max_height<<std::endl;
-    
-    VideoEncoder *ve_two=CreateVideoEncoder(argv[2],bit_rate);
-    VideoEncoder *ve_rgb=CreateVideoEncoder(argv[3],bit_rate);
-    FrameRecviver *fr=new RGBA2Two(ve_two,ve_rgb,max_height);
-    VideoDecoder *vd=CreateVideoDecoder(argv[1],fr);
 
-    vd->Start();
+    uint32_t frame_count=ConvertMovie(argv[1],argv[2],argv[3],max_height,bit_rate,true);
 
-    uint32 frame_count=0;
+    if(frame_count==0)
+    {
+        std::cerr<<"first decoder/encoder failed, try use software decoder/encoder"<<std::endl;
 
-    while(vd->NextFrame())
-        ++frame_count;
+        frame_count=ConvertMovie(argv[1],argv[2],argv[3],max_height,bit_rate,false);
+    }
         
     std::cout<<std::endl;
-    std::cout<<"Movie Encoder Finished!"<<std::endl;
-    std::cout<<"Total frame: "<<frame_count<<std::endl;
 
-    delete vd;
-    delete fr;
-    delete ve_two;
-    delete ve_rgb;
+    if(frame_count>0)
+    {
+        std::cout<<"Movie Encoder Finished!"<<std::endl;
+        std::cout<<"Total frame: "<<frame_count<<std::endl;
+    }
+    else
+    {
+        std::cout<<"Movie Encoder Failed!"<<std::endl;
+    }
+
     return 0;
 }

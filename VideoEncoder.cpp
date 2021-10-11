@@ -38,24 +38,26 @@ namespace
         {AV_CODEC_ID_NONE       ,""}
     };
 
-    AVCodec *GetAVEncodec(AVCodecID id)
+    AVCodec *GetAVEncodec(AVCodecID id,bool hardware)
     {
-        AVCodec *codec=nullptr;
-
-        for(auto &c:encodec_name_by_id)
+        if(hardware)
         {
+            AVCodec *codec=nullptr;
 
-            if(c.id==id)
+            for(auto &c:encodec_name_by_id)
             {
-                codec=avcodec_find_encoder_by_name(c.name);
-
-                if(codec)
+                if(c.id==id)
                 {
-                    std::cout<<"use encoder: "<<c.name<<std::endl;
-                    return codec;
+                    codec=avcodec_find_encoder_by_name(c.name);
+
+                    if(codec)
+                    {
+                        std::cout<<"use encoder: "<<c.name<<std::endl;
+                        return codec;
+                    }
                 }
             }
-        }        
+        }
 
         return avcodec_find_encoder(id);
     }
@@ -212,8 +214,7 @@ public:
                 if(packet->dts!=AV_NOPTS_VALUE)
                     packet->dts=av_rescale_q(packet->dts,codec_ctx->time_base,video_stream->time_base);
 
-                std::cout<<"pts: "<<packet->pts<<std::endl;
-                std::cout<<"dts: "<<packet->dts<<std::endl;
+                std::cout<<'.';
 
                 if(av_interleaved_write_frame(fmt_ctx,packet)<0)
                     return(false);
@@ -254,7 +255,7 @@ public:
     }
 };//class FFMPEGVideoEncoder:public VideoEncoder
 
-VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate)
+VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate,const bool use_hardware)
 {
     constexpr AVCodecID codec_list[]
     {
@@ -268,7 +269,7 @@ VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate)
     
     for(AVCodecID id:codec_list)
     {
-        codec=GetAVEncodec(AV_CODEC_ID_H264);        
+        codec=GetAVEncodec(AV_CODEC_ID_H264,use_hardware);
         if(codec)break;
     }
 
