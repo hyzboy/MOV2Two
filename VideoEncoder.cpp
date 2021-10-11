@@ -109,15 +109,15 @@ public:
         avformat_free_context(fmt_ctx);
     }
 
-    void Set(const uint w,const uint h,const AVRational &fr) override
+    void Set(const uint w,const uint h,const AVRational &fr,const AVRational &tb) override
     {
-        VideoEncoder::Set(w,h,fr);
+        VideoEncoder::Set(w,h,fr,tb);
 
         codec_ctx->bit_rate     =bit_rate;
         codec_ctx->width        =w;
         codec_ctx->height       =h;
         codec_ctx->framerate    =fr;
-        codec_ctx->time_base    =av_inv_q(fr);
+        codec_ctx->time_base    =tb;
         codec_ctx->gop_size     =12;
         codec_ctx->max_b_frames =2;
         codec_ctx->pix_fmt      =AV_PIX_FMT_NV12;
@@ -212,8 +212,9 @@ public:
                 if(packet->dts!=AV_NOPTS_VALUE)
                     packet->dts=av_rescale_q(packet->dts,codec_ctx->time_base,video_stream->time_base);
 
-                std::cout<<'.';
-                        
+                std::cout<<"pts: "<<packet->pts<<std::endl;
+                std::cout<<"dts: "<<packet->dts<<std::endl;
+
                 if(av_interleaved_write_frame(fmt_ctx,packet)<0)
                     return(false);
 
