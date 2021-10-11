@@ -5,6 +5,10 @@
 #include<stdlib.h>
 #include"libyuv/scale_argb.h"
 
+#ifdef USE_JNI
+    #include<jni.h>
+#endif//USE_JNI
+
 class RGBA2Two:public RGBAFrameRecviver
 {
     uint8 *two_image=nullptr;
@@ -143,6 +147,62 @@ uint32_t ConvertMovie(const char *src,const char *two,const char *rgb,const uint
     return frame_count;
 }
 
+bool Convert(const char *src,const char *two,const char *rgb,const uint32_t bit_rate,const uint32_t max_height)
+{
+    std::cout<<"            input: "<<src<<std::endl;
+    std::cout<<"output(rgb+alpha): "<<two<<std::endl;
+    std::cout<<"      output(rgb): "<<rgb<<std::endl;
+    std::cout<<"         bit_rate: "<<bit_rate<<std::endl;
+    std::cout<<"       max height: "<<max_height<<std::endl;
+
+//    return true;
+
+    uint32_t frame_count=ConvertMovie(src,two,rgb,max_height,bit_rate,true);
+
+    if(frame_count==0)
+    {
+        std::cerr<<"first decoder/encoder failed, try use software decoder/encoder"<<std::endl;
+
+        frame_count=ConvertMovie(src,two,rgb,max_height,bit_rate,false);
+    }
+        
+    std::cout<<std::endl;
+
+    if(frame_count>0)
+    {
+        std::cout<<"Movie Encoder Finished!"<<std::endl;
+        std::cout<<"Total frame: "<<frame_count<<std::endl;
+
+        return true;
+    }
+    else
+    {
+        std::cout<<"Movie Encoder Failed!"<<std::endl;
+
+        return false;
+    }
+}
+
+#ifdef USE_JNI
+const std::string GetJavaString(JNIEnv *env,jstring jstr)
+{
+    int length=env->GetStringUTFLength(jstr);
+    const char *str=env->GetStringUTFChars(jstr,nullptr);
+
+    return std::string(str,length);
+}
+
+extern "C" JNIEXPORT jint JNICALL Java_com_hyzboy_mov2two_convert(JNIEnv *env,jobject obj,jstring jsrc,jstring jtwo,jstring jrgb,jint bit_rate,jint max_height)
+{
+    jboolean jb=false;
+
+    const std::string src=GetJavaString(env,jsrc);
+    const std::string two=GetJavaString(env,jtwo);
+    const std::string rgb=GetJavaString(env,jrgb);
+
+    return Convert(src.c_str(),two.c_str(),rgb.c_str(),bit_rate,max_height);
+}
+#else
 int main(int argc,char **argv)
 {
     std::cout << "MOV 2 two\n";
@@ -157,38 +217,13 @@ int main(int argc,char **argv)
     long bit_rate=atol(argv[4]);
     long max_height;
 
-    std::cout<<"            input: "<<argv[1]<<std::endl;
-    std::cout<<"output(rgb+alpha): "<<argv[2]<<std::endl;
-    std::cout<<"      output(rgb): "<<argv[3]<<std::endl;
-    std::cout<<"         bit_rate: "<<bit_rate<<std::endl;
-
     if(argc<5)
         max_height=0;
     else
         max_height=atol(argv[5]);
 
-    std::cout<<"max height: "<<max_height<<std::endl;
-
-    uint32_t frame_count=ConvertMovie(argv[1],argv[2],argv[3],max_height,bit_rate,true);
-
-    if(frame_count==0)
-    {
-        std::cerr<<"first decoder/encoder failed, try use software decoder/encoder"<<std::endl;
-
-        frame_count=ConvertMovie(argv[1],argv[2],argv[3],max_height,bit_rate,false);
-    }
-        
-    std::cout<<std::endl;
-
-    if(frame_count>0)
-    {
-        std::cout<<"Movie Encoder Finished!"<<std::endl;
-        std::cout<<"Total frame: "<<frame_count<<std::endl;
-    }
-    else
-    {
-        std::cout<<"Movie Encoder Failed!"<<std::endl;
-    }
+    Convert(argv[1],argv[2],argv[3],bit_rate,max_height);
 
     return 0;
 }
+#endif//USE_JNI
