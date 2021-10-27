@@ -6,8 +6,18 @@
 #include"libyuv/scale_argb.h"
 
 #ifdef USE_JNI
+    #include<windows.h>
     #include<jni.h>
 #endif//USE_JNI
+
+constexpr uint32_t ALIGN_PIXELS=8;
+
+const uint32_t GetAlignValue(const uint32_t value)
+{
+    constexpr uint32_t tmp=~(ALIGN_PIXELS-1);
+
+    return (value+ALIGN_PIXELS-1)&tmp;
+}
 
 class RGBA2Two:public RGBAFrameRecviver
 {
@@ -16,6 +26,8 @@ class RGBA2Two:public RGBAFrameRecviver
     uint8 *rgb_image=nullptr;
 
     uint max_height;
+
+    bool new_size=false;
 
     uint new_width;
     uint new_height;
@@ -81,15 +93,27 @@ public:
             {
                 const double scale=double(max_height)/double(GetHeight());
 
-                new_width=uint(double(GetWidth())*scale);
-                new_height=max_height;
+                new_width   =GetAlignValue(double(GetWidth())*scale);
+                new_height  =GetAlignValue(max_height);
 
-                new_image=new uint8[new_width*new_height*4*2];
+                new_size=true;
             }
             else
             {
-                new_width   =GetWidth();
-                new_height  =GetHeight();
+                new_width   =GetAlignValue(GetWidth());
+                new_height  =GetAlignValue(GetHeight());
+
+                if(new_width!=GetWidth()
+                 ||new_height!=GetHeight())
+                    new_size=true;
+            }
+            
+            std::cout<<"Movie Origin size: "<<GetWidth()<<"x"<<GetHeight()<<std::endl;
+
+            if(new_size)
+            {
+                std::cout<<"Movie Scaled size: "<<new_width<<"x"<<new_height<<std::endl;
+                new_image=new uint8[new_width*new_height*4*2];
             }
 
             two_encoder->Set(new_width*2,new_height,frame_rate,time_base);
@@ -103,7 +127,7 @@ public:
 
         Convert(two_image,data,GetWidth(),GetHeight());
 
-        if(new_height!=GetHeight())
+        if(new_size)
         {
             libyuv::ARGBScale(two_image,GetWidth()*8,   GetWidth()*2,   GetHeight(),
                               new_image,new_width*8,    new_width*2,    new_height,libyuv::FilterMode::kFilterBox);
@@ -184,6 +208,23 @@ bool Convert(const char *src,const char *two,const char *rgb,const uint32_t bit_
 }
 
 #ifdef USE_JNI
+
+BOOL APIENTRY DllMain( HMODULE hModule,
+                       DWORD  ul_reason_for_call,
+                       LPVOID lpReserved
+                     )
+{
+    switch (ul_reason_for_call)
+    {
+    case DLL_PROCESS_ATTACH:
+    case DLL_THREAD_ATTACH:
+    case DLL_THREAD_DETACH:
+    case DLL_PROCESS_DETACH:
+        break;
+    }
+    return TRUE;
+}
+
 const std::string GetJavaString(JNIEnv *env,jstring jstr)
 {
     int length=env->GetStringUTFLength(jstr);
