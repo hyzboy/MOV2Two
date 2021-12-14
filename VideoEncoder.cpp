@@ -1,4 +1,4 @@
-extern "C"
+﻿extern "C"
 {
     #include <libavcodec/avcodec.h>
     #include <libavformat/avformat.h>
@@ -8,6 +8,7 @@ extern "C"
 #include"VideoEncoder.h"
 #include<iostream>
 #include"libyuv.h"
+#include <queue>
 
 namespace
 {
@@ -22,6 +23,7 @@ namespace
         {AV_CODEC_ID_H264       ,"h264_nvenc"},
         {AV_CODEC_ID_H264       ,"nvenc"},
         {AV_CODEC_ID_H264       ,"nvenc_h264"},
+        
 
         {AV_CODEC_ID_HEVC       ,"hevc_nvenc"},
         {AV_CODEC_ID_HEVC       ,"nvenc_hevc"},
@@ -66,17 +68,27 @@ namespace
 class FFMPEGVideoEncoder:public VideoEncoder
 {
     AVCodec *codec;
-    AVCodecContext *codec_ctx;
+    
     AVFrame *frame;
 
     AVStream *video_stream=nullptr;
-
+    AVStream* audio_stream = nullptr;
     uint pts;
 
-    AVFormatContext *fmt_ctx;
+    AVCodecContext* m_audio_codeCtx = nullptr;
+    AVRational m_audio_time_base;
+
     AVOutputFormat *out_fmt;
 
     AVPacket *packet;
+
+    std::queue< AVPacket*> m_queue_audio;
+
+    int m_audio_stream_index = -1;
+    int m_video_stream_index = -1;
+    int count = -1;
+
+    bool b_initstream = false;
 
 public:
 
@@ -133,6 +145,34 @@ public:
         video_stream->codecpar->format      =codec_ctx->pix_fmt;
         video_stream->codecpar->bit_rate    =bit_rate;
         video_stream->time_base             =codec_ctx->time_base;
+
+        m_video_stream_index = m_audio_stream_index + 1;
+    }
+
+    bool AddAudioStream(AVCodecContext* audio_codeCtx, AVRational audio_time_base_) override
+    {
+        m_audio_codeCtx = audio_codeCtx;
+        fmt_ctx->audio_codec_id = AV_CODEC_ID_AAC;
+        fmt_ctx->oformat->audio_codec = AV_CODEC_ID_AAC;
+
+        //输出上下文新增一个音频流
+        audio_stream = avformat_new_stream(fmt_ctx, NULL);
+        if (audio_stream == nullptr)
+            return false;
+
+        //此处把编码器的参数拷贝进流里
+        int ret = avcodec_parameters_from_context(audio_stream->codecpar, audio_codeCtx);
+        if (ret < 0)
+            return false;
+
+        audio_stream->start_time = 0;
+        audio_stream->time_base = audio_codeCtx->time_base;
+
+        m_audio_time_base = audio_time_base_;
+        //标记音频流序号
+        m_audio_stream_index =  0;
+
+        return true;
     }
 
     bool Init() override
@@ -178,12 +218,13 @@ public:
             return(false);
         }
 
+        b_initstream = true;
         return(true);
     }
 
-    bool encode()
+    bool encode(AVFrame* _frame)
     {
-        int ret=avcodec_send_frame(codec_ctx,frame);
+        int ret=avcodec_send_frame(codec_ctx, _frame);
 
         if(ret<0)
         {
@@ -207,12 +248,18 @@ public:
 
             if(ret==0)
             {
-                packet->flags|=AV_PKT_FLAG_KEY;
+                count++;
+                if (count % codec_ctx->gop_size == 0)
+                    packet->flags |= AV_PKT_FLAG_KEY;
 
                 if(packet->pts!=AV_NOPTS_VALUE)
                     packet->pts=av_rescale_q(packet->pts,codec_ctx->time_base,video_stream->time_base);
                 if(packet->dts!=AV_NOPTS_VALUE)
                     packet->dts=av_rescale_q(packet->dts,codec_ctx->time_base,video_stream->time_base);
+
+                packet->stream_index = m_video_stream_index;
+                packet->duration = av_rescale_q(1, codec_ctx->time_base, video_stream->time_base);
+                packet->pos = -1;
 
                 std::cout<<'.';
 
@@ -241,17 +288,51 @@ public:
         frame->pts=pts;
         ++pts;
 
-        return encode();
+        return encode(frame);
     }
 
     bool Finish() override
     {
-        if(!encode())
+        if(!encode(NULL))
             return(false);
 
         av_write_trailer(fmt_ctx);
         avio_close(fmt_ctx->pb);
         return(true);
+    }
+
+    void WriteFrame(AVPacket* pkt) override
+    {
+        AVPacket* _pkt = av_packet_clone(pkt);
+        if (_pkt == NULL)
+            return;
+
+        m_queue_audio.push(_pkt);
+
+        if (!b_initstream)
+            return;
+
+        while (!m_queue_audio.empty())
+        {
+            _pkt = m_queue_audio.front();
+            m_queue_audio.pop();
+
+            _pkt->duration = av_rescale_q(_pkt->duration,
+                m_audio_time_base,
+                audio_stream->time_base);
+
+            
+            _pkt->pts = _pkt->pts * _pkt->duration;
+            _pkt->dts = _pkt->pts;
+            _pkt->stream_index = m_audio_stream_index;
+            _pkt->pos = -1;
+
+           // printf("durtion:%d,pts:%lld", _pkt->duration, _pkt->pts);
+
+            int ret = av_interleaved_write_frame(fmt_ctx, _pkt);
+
+            //printf("audio write ret:%d\n", ret);
+        }
     }
 };//class FFMPEGVideoEncoder:public VideoEncoder
 

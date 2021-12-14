@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 #include"DataType.h"
 extern "C"
 {
+#include <libavformat/avformat.h>
     #include<libavcodec/avcodec.h>
 }
 
@@ -17,6 +18,8 @@ public:
 class VideoEncoder
 {
 protected:
+    AVFormatContext* fmt_ctx;
+    AVCodecContext* codec_ctx;
 
     uint width;
     uint height;
@@ -36,6 +39,16 @@ public:
         bit_rate=br;
     }
 
+    AVFormatContext* GetFrmCtx()
+    {
+        return fmt_ctx;
+    }
+
+    AVCodecContext* GetCodecCtx() {
+        return codec_ctx
+            ;
+    };
+
     virtual ~VideoEncoder()=default;
 
     virtual void Set(const uint w,const uint h,const AVRational &fr,const AVRational &tb)
@@ -46,11 +59,15 @@ public:
         time_base=tb;
     }
 
+    virtual bool AddAudioStream(AVCodecContext* audio_codeCtx, AVRational timebase)=0;
+
     virtual bool Init()=0;
 
     virtual bool Put(const uint8 *)=0;
 
     virtual bool Finish()=0;
+
+    virtual void WriteFrame(AVPacket* pkt) = 0;
 };//class VideoEncoder
 
 VideoEncoder *CreateVideoEncoder(const char *filename,const uint bit_rate,const bool);

@@ -7,6 +7,7 @@
 #include<iostream>
 #include"VideoDecoder.h"
 #include"FrameRecviver.h"
+#include "AudioDecoder.h"
 
 namespace
 {
@@ -71,7 +72,7 @@ namespace
 
 class FFmpegVideoDecoder:public VideoDecoder
 {
-    AVFormatContext *   ctx;
+    
 
     AVCodecParameters * video_cp;
 
@@ -97,6 +98,7 @@ public:
         video_cp=nullptr;
         video_stream=nullptr;
         video_stream_index=-1;
+        audio_stream_index = -1;
 
         video_codec=nullptr;
         video_ctx=nullptr;
@@ -114,6 +116,11 @@ public:
 
         if(ctx)
             avformat_close_input(&ctx);
+    }
+
+    const AVRational GetAudioTimeBase() override
+    {
+        return ctx->streams[audio_stream_index]->time_base;
     }
 
     bool Init(const char *filename,const bool use_hardware)
@@ -139,7 +146,10 @@ public:
                 video_stream=ctx->streams[i];
                 video_stream_index=i;
                 video_cp=video_stream->codecpar;
-                break;
+            }
+            if (ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
+            {
+                audio_stream_index = i;
             }
         }
 
@@ -219,6 +229,13 @@ public:
 
                 av_packet_unref(&packet);
                 return(true);
+            }
+            else if (packet.stream_index == audio_stream_index)
+            {
+                if (audio_decoder)
+                {
+                    audio_decoder->DecodePackete(&packet);
+                }
             }
 
             av_packet_unref(&packet);

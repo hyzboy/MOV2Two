@@ -7,16 +7,21 @@ extern "C"
 }
 
 class FrameRecviver;
-
+class AudioDecoder;
 /**
  * 解码器
  */
 class VideoDecoder
 {
 protected:
+    AVFormatContext* ctx;
 
     int width,height;
     double fps,frame_time;
+    
+    int audio_stream_index = -1;
+
+    AudioDecoder* audio_decoder = nullptr;
 
 public:
 
@@ -24,8 +29,18 @@ public:
     const int       GetHeight   ()const{return height;}
     const double    GetFPS      ()const{return fps;}
     const double    GetFrameTime()const{return frame_time;}
+    const int       GetAudioIndex()const { return audio_stream_index; };
+
+    AVFormatContext* GetFrmCtx() {
+        return ctx
+            ;
+    };
+
+    void SetAudioDecoder(AudioDecoder* audiodecoder) { audio_decoder = audiodecoder; };
 
     virtual const AVRational &GetFrameRate()=0;
+
+    virtual const AVRational GetAudioTimeBase() = 0;
 
 public:
 

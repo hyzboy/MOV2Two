@@ -1,9 +1,11 @@
-#include <iostream>
+﻿#include <iostream>
 #include"VideoEncoder.h"
 #include"VideoDecoder.h"
 #include"FrameRecviver.h"
 #include<stdlib.h>
 #include"libyuv/scale_argb.h"
+#include "AudioDecoder.h"
+#include "AudioEncoder.h"
 
 #ifdef USE_JNI
     #include<windows.h>
@@ -156,6 +158,35 @@ uint32_t ConvertMovie(const char *src,const char *two,const char *rgb,const uint
     FrameRecviver *fr=new RGBA2Two(ve_two,ve_rgb,max_height);
     VideoDecoder *vd=CreateVideoDecoder(src,fr,use_hardware);
 
+    //音频
+    AudioDecoder* audio_decoder = nullptr;
+    if (vd->GetAudioIndex() > -1)
+    {
+        audio_decoder = new AudioDecoder();
+        if (!audio_decoder->init(vd->GetFrmCtx(), vd->GetAudioIndex()))
+        {
+            return -1;
+        }
+
+        AudioEncoder* audio_encoder = new AudioEncoder();
+        if (!audio_encoder->Init())
+        {
+            return -1;
+        }
+
+        if (!audio_decoder->CreateAudioProcesser(audio_encoder->GetEncoderCtx()))
+        {
+            return -1;
+        }
+
+        audio_decoder->SetEncoder(audio_encoder);
+
+        ve_two->AddAudioStream(audio_encoder->GetEncoderCtx(), vd->GetAudioTimeBase());
+        ve_rgb->AddAudioStream(audio_encoder->GetEncoderCtx(), vd->GetAudioTimeBase());
+
+        audio_encoder->SetVideoEncoder(ve_two, ve_rgb);
+    }
+    vd->SetAudioDecoder(audio_decoder);
     vd->Start();
 
     uint32_t frame_count=0;
@@ -248,22 +279,30 @@ int main(int argc,char **argv)
 {
     std::cout << "MOV 2 two\n";
 
-    if(argc<5)
+    if(argc<6)
     {
         std::cout<<"Format: mov2two [input] [output two] [output rgb] [bit rate] [max height]\n";
         std::cout<<"Example: mov2two input.mov output_two.mp4 output_rgb.mp4 1048576 480\n\n";
         return 0;
     }
 
-    long bit_rate=atol(argv[4]);
+    long bit_rate=atol(argv[5]);
     long max_height;
 
     if(argc<5)
         max_height=0;
     else
-        max_height=atol(argv[5]);
+        max_height=atol(argv[4]);
 
     Convert(argv[1],argv[2],argv[3],bit_rate,max_height);
+
+    /*long bit_rate = 2000000;
+    long max_height=1080;
+    const char* infile = "d:\\mov\\39.mov";
+    const char* outfile1 = "d:\\mov\\31.mp4";
+    const char* outfile2 = "d:\\mov\\31_1.mp4";
+   
+    Convert(infile, outfile1, outfile2, bit_rate, max_height);*/
 
     return 0;
 }
