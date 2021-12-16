@@ -72,7 +72,7 @@ bool AudioEncoder::EncoderFrame(AVFrame* frame)
 {
 	AVFrame *frame_in    = frame;
 	
-	AVPacket pkt_out,pkt_out2;
+	AVPacket *pkt_out,*pkt_out2;
 	bool result = true;
 
 	//±àÂë
@@ -83,27 +83,32 @@ bool AudioEncoder::EncoderFrame(AVFrame* frame)
 
 	//av_init_packet(&pkt_out);
 	//av_init_packet(&pkt_out2);
-	ret = avcodec_receive_packet(pOutputCodecCtx, &pkt_out);
+
+	pkt_out=av_packet_alloc();
+	pkt_out2=av_packet_alloc();
+
+	ret = avcodec_receive_packet(pOutputCodecCtx, pkt_out);
 	if (ret != 0)
 	{
-		av_packet_unref(&pkt_out);
+		av_packet_unref(pkt_out);
 		goto __END;
 	}
 
-	pkt_out.pts = m_count++;
+	pkt_out->pts = m_count++;
 
-	av_packet_ref(&pkt_out2, &pkt_out);
+	av_packet_ref(pkt_out2, pkt_out);
+
 	if (video_encoder1)
 	{
-		video_encoder1->WriteFrame(&pkt_out);
+		video_encoder1->WriteFrame(pkt_out);
 	}
 	if (video_encoder2)
 	{
-		video_encoder2->WriteFrame(&pkt_out2);
+		video_encoder2->WriteFrame(pkt_out2);
 	}
 
-	av_packet_unref(&pkt_out);
-	av_packet_unref(&pkt_out2);
+	av_packet_unref(pkt_out);
+	av_packet_unref(pkt_out2);
 	
 __END:
 	

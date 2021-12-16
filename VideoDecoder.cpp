@@ -204,12 +204,17 @@ public:
     {
         int ret;
 
-        while(av_read_frame(ctx,&packet)>=0)
+        while((ret=av_read_frame(ctx,&packet))>=0)
         {
             if(packet.stream_index==video_stream_index)
             {
-                if(avcodec_send_packet(video_ctx,&packet)<0)
+                ret=avcodec_send_packet(video_ctx,&packet);
+                
+                if(ret<0)
+                {
+                    std::cerr<<"avcodec_send_packet return "<<ret<<std::endl;
                     return(false);
+                }
                 
                 ret=avcodec_receive_frame(video_ctx,frame);
 
@@ -221,6 +226,7 @@ public:
 
                 if(ret<0)
                 {
+                    std::cerr<<"avcodec_receive_frame return "<<ret<<std::endl;
                     av_packet_unref(&packet);
                     return(false);
                 }
@@ -241,6 +247,7 @@ public:
             av_packet_unref(&packet);
         }
 
+        std::cerr<<"av_read_frame return "<<ret<<std::endl;
         return(false);
     }
 

@@ -286,13 +286,13 @@ int main(int argc,char **argv)
         return 0;
     }
 
-    long bit_rate=atol(argv[5]);
+    long bit_rate=atol(argv[4]);
     long max_height;
 
     if(argc<5)
         max_height=0;
     else
-        max_height=atol(argv[4]);
+        max_height=atol(argv[5]);
 
     Convert(argv[1],argv[2],argv[3],bit_rate,max_height);
 
