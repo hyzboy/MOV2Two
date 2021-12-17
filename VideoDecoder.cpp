@@ -179,17 +179,9 @@ public:
 
         frame=av_frame_alloc();
 
-        fps=double(video_stream->avg_frame_rate.num)/double(video_stream->avg_frame_rate.den);
-        frame_time=double(video_stream->avg_frame_rate.den)/double(video_stream->avg_frame_rate.num);
-
-        frame_recviver->SetFrameRate(video_stream->r_frame_rate,video_stream->time_base);
+        frame_recviver->SetFrameRate(video_stream->avg_frame_rate);
 
         return(true);
-    }
-    
-    const AVRational &GetFrameRate() override
-    {
-        return video_stream->r_frame_rate;
     }
 
     void Start()

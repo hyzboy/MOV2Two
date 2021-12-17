@@ -1,4 +1,4 @@
-#ifndef __AUDIOENCODER__
+﻿#ifndef __AUDIOENCODER__
 #define __AUDIOENCODER__
 
 #include "AudioParams.h"

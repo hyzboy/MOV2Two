@@ -1,4 +1,4 @@
-#ifndef __AUDIOPARAMS__
+﻿#ifndef __AUDIOPARAMS__
 #define __AUDIOPARAMS__
 
 /*

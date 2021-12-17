@@ -16,13 +16,12 @@ protected:
     uint height=0;
 
     AVRational frame_rate;
-    AVRational time_base;
 
 public:
 
     virtual ~FrameRecviver()=default;
 
-    virtual void SetFrameRate(const AVRational &fr,const AVRational &tb){frame_rate=fr;time_base=tb;}
+    virtual void SetFrameRate(const AVRational &fr){frame_rate=fr;}
     virtual void OnFrame(const AVFrame *frame)=0;
 
 public:

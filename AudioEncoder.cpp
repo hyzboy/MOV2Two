@@ -81,9 +81,6 @@ bool AudioEncoder::EncoderFrame(AVFrame* frame)
 	if (ret < 0)
 		goto __END;
 
-	//av_init_packet(&pkt_out);
-	//av_init_packet(&pkt_out2);
-
 	pkt_out=av_packet_alloc();
 	pkt_out2=av_packet_alloc();
 

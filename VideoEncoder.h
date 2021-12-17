@@ -24,7 +24,6 @@ protected:
     uint width;
     uint height;
     AVRational frame_rate;
-    AVRational time_base;
     uint bit_rate;
 
     char filename[_MAX_PATH];
@@ -51,12 +50,11 @@ public:
 
     virtual ~VideoEncoder()=default;
 
-    virtual void Set(const uint w,const uint h,const AVRational &fr,const AVRational &tb)
+    virtual void Set(const uint w,const uint h,const AVRational &fr)
     {
         width=w;
         height=h;
         frame_rate=fr;
-        time_base=tb;
     }
 
     virtual bool AddAudioStream(AVCodecContext* audio_codeCtx, AVRational timebase)=0;

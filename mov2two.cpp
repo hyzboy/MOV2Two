@@ -118,12 +118,12 @@ public:
                 new_image=new uint8[new_width*new_height*4*2];
             }
 
-            two_encoder->Set(new_width*2,new_height,frame_rate,time_base);
+            two_encoder->Set(new_width*2,new_height,frame_rate);
             two_encoder->Init();
 
             rgb_image=new uint8[new_width*new_height*4];
 
-            rgb_encoder->Set(new_width,new_height,frame_rate,time_base);
+            rgb_encoder->Set(new_width,new_height,frame_rate);
             rgb_encoder->Init();
         }
 

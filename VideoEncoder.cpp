@@ -123,15 +123,16 @@ public:
         avformat_free_context(fmt_ctx);
     }
 
-    void Set(const uint w,const uint h,const AVRational &fr,const AVRational &tb) override
+    void Set(const uint w,const uint h,const AVRational &fr) override
     {
-        VideoEncoder::Set(w,h,fr,tb);
+        VideoEncoder::Set(w,h,fr);
 
         codec_ctx->bit_rate     =bit_rate;
         codec_ctx->width        =w;
         codec_ctx->height       =h;
         codec_ctx->framerate    =fr;
-        codec_ctx->time_base    =tb;
+        codec_ctx->time_base.den=fr.num;
+        codec_ctx->time_base.num=fr.den;
         codec_ctx->gop_size     =12;
         codec_ctx->max_b_frames =2;
         codec_ctx->pix_fmt      =AV_PIX_FMT_NV12;
